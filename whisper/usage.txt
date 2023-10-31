@@ -1,0 +1,2 @@
+whisper matrix-en.mp3 --model medium --output_format txt
+whisper matrix-en.mp3 --model medium --output_format srt
