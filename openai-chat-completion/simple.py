@@ -6,7 +6,6 @@ completion = client.chat.completions.create(
   max_tokens=100,
   seed=42,
   temperature=0.8,
-  stream=True,
   messages=[
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Tell me a joke"}
