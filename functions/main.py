@@ -9,15 +9,12 @@ from conversation import Conversation
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-GPT_MODEL = "gpt-3.5-turbo-0613"
-GPT_4 = "gpt-4-0613"
-DATABASE = "db/Chinook.db"
-# DATABASE = "db/movies.sqlite"
-USER_MESSAGE = "Hi, who are the top 10 artists by number of tracks"
-# USER_MESSAGE = "Hi, what are the top 10 movies with the budget more than 10000000 by user rating"
+MODEL = "gpt-4o"
+DATABASE = "db/movies.sqlite"
+USER_MESSAGE = "Hi, what are the directors of top 10 movies with the budget more than 1 mil by user rating"
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
-def chat_completion_request(messages, functions=None, model=GPT_MODEL):
+def chat_completion_request(messages, functions=None, model=MODEL):
     headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + openai.api_key,
@@ -43,57 +40,12 @@ if __name__ == '__main__':
     conn = sqlite3.connect(DATABASE)
 
 
-def get_table_names(conn):
-    """Return a list of table names."""
-    table_names = []
-    tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    for table in tables.fetchall():
-        table_names.append(table[0])
-    return table_names
-
-
-def get_column_names(conn, table_name):
-    """Return a list of column names."""
-    column_names = []
-    columns = conn.execute(f"PRAGMA table_info('{table_name}');").fetchall()
-    for col in columns:
-        column_names.append(col[1])
-    return column_names
-
-def get_table_rows_count(conn, table_name):
-    """Return a list of column names."""
-    column_names = []
-    columns = conn.execute(f"SELECT COUNT(*) FROM {table_name};").fetchall()
-    for col in columns:
-        column_names.append(col[0])
-    return column_names
-
-def save_database_info_to_csv(conn, filename):
-    get_database_info(conn)
-    with open(filename, "w") as f:
-        for table in get_database_info(conn):
-            f.write(f"Table: {table['table_name']}\n")
-            f.write(f"Columns: {', '.join(table['column_names'])}\n\n")
-
-
-
-def get_database_info(conn):
-    """Return a list of dicts containing the table name and columns for each table in the database."""
-    table_dicts = []
-    for table_name in get_table_names(conn):
-        columns_names = get_column_names(conn, table_name)
-        table_dicts.append({"table_name": table_name, "column_names": columns_names})
-    return table_dicts
-
-
-
-database_schema_dict = get_database_info(conn)
-database_schema_string = "\n".join(
-    [
-        f"Table: {table['table_name']}\nColumns: {', '.join(table['column_names'])}"
-        for table in database_schema_dict
-    ]
-)
+database_schema_string = """
+Table: movies
+Columns: id, original_title, budget, popularity, release_date, revenue, title, vote_average, overview, tagline, uid, director_id
+Table: directors
+Columns: name, id, gender, uid, department
+"""
 
 print(f"Database schema string: '{database_schema_string}'")
 
@@ -168,7 +120,7 @@ Please return a fixed SQL query in plain text.
 Your response should consist of ONLY the SQL query with the separator sql_start at the beginning and sql_end at the end""",
                 }
             )
-            response = chat_completion_request(messages, model=GPT_4)
+            response = chat_completion_request(messages, model=MODEL)
 
             # Retrying with the fixed SQL query. If it fails a second time we exit.
             try:
